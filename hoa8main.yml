@@ -1,0 +1,34 @@
+---
+- hosts: all
+  gather_facts: true
+  become: yes
+  become_user: root
+
+  tasks:
+    - name: Install tshark package
+      package:
+        name: tshark
+        state: present
+
+    - name: Collect PCAP file from server
+      fetch:
+        src: /home/abby_s1/captured.pcap
+        dest: /home/abby_workstation/hoa8/dest/
+        flat: yes
+
+- hosts: all
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Extract executable from PCAP file
+      shell: tshark -r /home/abby_workstation/hoa8/dest/captured.pcap -Y "tcp" -T fields -e ip.src -e tcp.payload -E occurrence=f >  /home/abby_workstation/hoa8/pcap_out/tshark_output.txt
+      args:
+        creates: /home/abby_workstation/hoa8/pcap_out/executable.exe
+
+    - name: Debug .exe file
+      command: "cat /home/abby_workstation/hoa8/pcap_out/report.xml"
+      register: cat_output
+      changed_when: false
+
+    - debug:
+        var: cat_output.stdout_lines
